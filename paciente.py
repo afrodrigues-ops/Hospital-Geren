@@ -1,5 +1,11 @@
 from database import obter_conexao
 
+class Paciente:
+    def __init__(self, nome, cpf, idade, urgencia):
+        self.nome = nome
+        self.cpf = cpf
+        self.idade = idade
+        self.urgencia = urgencia
 
 def cadastrar_paciente(nome, cpf, data_nascimento, sexo=None, telefone=None, endereco=None):
     conn = obter_conexao()
