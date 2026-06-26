@@ -12,7 +12,7 @@ def cadastrar_aleatorios(fila, quantidade=995):
 
     for i in range(quantidade):
         nome     = fake.name()             # nome brasileiro gerado automaticamente
-        cpf      = fake.cpf()             # CPF no formato 000.000.000-00
+        cpf      = fake.cpf()              # CPF no formato 000.000.000-00
         idade    = random.randint(1, 99)  # idade entre 1 e 99 anos
         urgencia = random.randint(0, 4)   # nível 0-4, igual ao seu sistema
 
@@ -77,10 +77,19 @@ def menu():
 
             # Valida o CPF: remove pontos e traço e verifica se tem exatamente 11 dígitos
             cpf_numeros = normalizar_cpf(cpf)
-            if not cpf_numeros.isdigit() or len(cpf_numeros) != 11 or not fila.busca_sem_hash(cpf_numeros):
+            
+            if not cpf_numeros.isdigit() or len(cpf_numeros) != 11:
                 print("CPF inválido! O CPF deve conter exatamente 11 números.")
             else:
-                idade = int(input("Idade: "))
+                # --- BLOCO COLOADO AQUI PARA PROTEGER CONTRA ENTERS EM BRANCO ---
+                while True:
+                    idade_input = input("Idade: ").strip()
+                    if idade_input.isdigit():
+                        idade = int(idade_input)
+                        break
+                    print("Por favor, digite uma idade válida (apenas números)!")
+                # -----------------------------------------------------------------
+
                 print(
                     "Urgência: 1-Emergência, 2-Muito Urgente, 3-Urgente, 4-Pouco Urgente, 5-Não Urgente"
                 )
@@ -88,7 +97,7 @@ def menu():
 
                 if op in legenda:
                     nivel_urgencia = legenda[op]
-                    fila.inserir(nome, cpf, idade, nivel_urgencia)
+                    fila.inserir(nome, cpf_numeros, idade, nivel_urgencia)
                     print("Paciente cadastrado!")
                 else:
                     print("Opção de urgência inválida!")
@@ -98,12 +107,14 @@ def menu():
 
         elif opcao == "3":
             cpf_excluir = input("Digite o cpf para excluir: ")
-            fila.excluir(cpf_excluir)
+            cpf_excluir_limpo = normalizar_cpf(cpf_excluir)
+            fila.excluir(cpf_excluir_limpo)
 
         elif opcao == "4":
             cpf_busca = input("Digite o cpf para pesquisar: ")
-            if not fila.busca(cpf_busca):
-                print("Lista está vazia")
+            cpf_busca_limpo = normalizar_cpf(cpf_busca)
+            if not fila.busca(cpf_busca_limpo):
+                print("Paciente não encontrado ou lista está vazia")
 
         elif opcao == "5":
             qtd = input("Quantos pacientes deseja cadastrar? (Enter para 995): ")
@@ -118,7 +129,8 @@ def menu():
                 print("Cadastre multiplos pacientes primeiro (opcao 5)!")
             else:
                 cpf_teste = input("Digite o CPF para comparar o tempo de busca: ")
-                medir_tempo_busca(fila, cpf_teste)
+                cpf_teste_limpo = normalizar_cpf(cpf_teste)
+                medir_tempo_busca(fila, cpf_teste_limpo)
 
         elif opcao == "7":
             break
