@@ -71,12 +71,10 @@ class TabelaHash:
         return False
 
     def func_hash(self, cpf):
-        # Soma os dígitos do CPF e aplica módulo pelo tamanho da tabela
-        soma = 0
-        for letra in cpf:
-            if letra.isdigit():
-                soma += int(letra)
-        return soma % self.tam
+        # Usa o valor numérico completo do CPF (não a soma dos dígitos)
+        # A soma de 11 dígitos nunca passa de 99, então soma % 500 nunca
+        # usava os índices 100-499. int(cpf) % tam distribui por toda a tabela.
+        return int(cpf) % self.tam
 
     def mostrar_tabela(self):
         # Verifica se há algum paciente cadastrado antes de exibir
