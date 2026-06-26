@@ -109,3 +109,73 @@ def processar_triagem(id_paciente, id_enfermeiro, lista_id_sintomas, id_comorbid
     finally:
         cursor.close()
         conn.close()
+
+
+def listar_sintomas_disponiveis():
+    # ATENÇÃO: assume que a tabela "sintomas" tem uma coluna "nome" (igual a
+    # "comorbidades"). Se o nome da coluna no seu banco for diferente, ajuste
+    # o SELECT abaixo.
+    conn = obter_conexao()
+    if not conn:
+        return []
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id_sintoma, nome, pontuacao FROM sintomas ORDER BY nome")
+        resultados = cursor.fetchall()
+        return [
+            {
+                "id_sintoma": r[0],
+                "nome": r[1],
+                "pontuacao": r[2],
+            }
+            for r in resultados
+        ]
+
+    except Exception as e:
+        print(f"Erro ao listar sintomas: {e}")
+        return []
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def listar_fila_atendimento():
+    # Lista os pacientes que estão aguardando atendimento, do mais urgente
+    # para o menos urgente (prioridade 1 = mais urgente).
+    conn = obter_conexao()
+    if not conn:
+        return []
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT p.nome, p.cpf, t.classificacao, f.prioridade, f.status
+            FROM fila_atendimento f
+            INNER JOIN triagens t ON t.id_triagem = f.id_triagem
+            INNER JOIN pacientes p ON p.id_paciente = t.id_paciente
+            WHERE f.status = 'AGUARDANDO'
+            ORDER BY f.prioridade ASC
+            """
+        )
+        resultados = cursor.fetchall()
+        return [
+            {
+                "nome": r[0],
+                "cpf": r[1],
+                "classificacao": r[2],
+                "prioridade": r[3],
+                "status": r[4],
+            }
+            for r in resultados
+        ]
+
+    except Exception as e:
+        print(f"Erro ao listar fila de atendimento: {e}")
+        return []
+
+    finally:
+        cursor.close()
+        conn.close()
