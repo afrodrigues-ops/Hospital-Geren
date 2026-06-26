@@ -7,6 +7,13 @@ class Paciente:
         self.idade = idade
         self.urgencia = urgencia
 
+    def mostrar_no(self):
+        # Mapeia o número da urgência de volta para texto para ficar bonito na tela
+        niveis = {4: "Emergência", 3: "Muito Urgente", 2: "Urgente", 1: "Pouco Urgente", 0: "Não Urgente"}
+        txt_urgencia = niveis.get(self.urgencia, "Desconhecido")
+        
+        print(f"Paciente: {self.nome} | CPF: {self.cpf} | Idade: {self.idade} | Urgência: {txt_urgencia}")
+
 def cadastrar_paciente(nome, cpf, data_nascimento, sexo=None, telefone=None, endereco=None):
     conn = obter_conexao()
     if not conn:
