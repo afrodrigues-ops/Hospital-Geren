@@ -1,4 +1,5 @@
 from paciente import buscar_paciente_por_cpf, cadastrar_paciente
+from paciente import Paciente
 
 class ListaEncadeada:
     def __init__(self):
