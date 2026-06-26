@@ -4,7 +4,12 @@ from paciente import (
     buscar_paciente_por_cpf,
     listar_comorbidades_disponiveis,
 )
-from triagem import processar_triagem, listar_sintomas_disponiveis, listar_fila_atendimento
+from triagem import (
+    processar_triagem,
+    listar_fluxogramas_disponiveis,
+    listar_discriminadores_do_fluxograma,
+    listar_fila_atendimento,
+)
 from misc import normalizar_cpf
 
 
@@ -63,8 +68,25 @@ def menu_buscar_paciente():
     return paciente
 
 
+def selecionar_id_unico(itens, campo_id, label):
+    # Mostra uma lista (ex.: fluxogramas) e deixa o usuário escolher 1 item.
+    if not itens:
+        print(f"Nenhum(a) {label} cadastrado(a) no sistema.")
+        return None
+
+    print(f"\n--- {label.capitalize()}s disponíveis ---")
+    for item in itens:
+        print(f"{item[campo_id]} - {item['nome']}")
+
+    escolha = input(f"Digite o ID d{'o' if label[-1]!='a' else 'a'} {label}: ").strip()
+    if not escolha.isdigit():
+        print("ID inválido.")
+        return None
+    return int(escolha)
+
+
 def selecionar_ids(itens, campo_id, label):
-    # Mostra uma lista (sintomas ou comorbidades) e deixa o usuário escolher
+    # Mostra uma lista (ex.: comorbidades) e deixa o usuário escolher
     # vários IDs separados por vírgula.
     if not itens:
         print(f"Nenhum(a) {label} cadastrado(a) no sistema.")
@@ -82,6 +104,36 @@ def selecionar_ids(itens, campo_id, label):
     return [int(x.strip()) for x in escolha.split(",") if x.strip().isdigit()]
 
 
+def percorrer_discriminadores(id_fluxograma):
+    """
+    Apresenta os discriminadores do fluxograma escolhido, nível por nível,
+    do mais urgente (EMERGÊNCIA) para o menos urgente (POUCO URGENTE).
+    Segue a lógica real do Manchester: ao primeiro discriminador
+    confirmado, já para e retorna — não precisa perguntar o resto.
+
+    Se o enfermeiro não confirmar nenhum em nenhum nível, retorna lista
+    vazia (cai em NÃO URGENTE).
+    """
+    discriminadores = listar_discriminadores_do_fluxograma(id_fluxograma)
+    if not discriminadores:
+        print("Esse fluxograma não tem discriminadores cadastrados.")
+        return []
+
+    nivel_atual = None
+    for d in discriminadores:
+        if d["classificacao"] != nivel_atual:
+            nivel_atual = d["classificacao"]
+            print(f"\n-- Nível: {nivel_atual} --")
+
+        resposta = input(f"  {d['pergunta']}? (s/n, Enter para pular): ").strip().lower()
+        if resposta == "s":
+            print(f"  >> Confirmado: \"{d['pergunta']}\" — classificação: {nivel_atual}")
+            return [d["id_discriminador"]]
+
+    print("\nNenhum discriminador confirmado nos fluxogramas avaliados.")
+    return []
+
+
 def menu_triagem(id_enfermeiro):
     cpf = normalizar_cpf(input("CPF do paciente para triagem: ").strip())
     paciente = buscar_paciente_por_cpf(cpf)
@@ -91,29 +143,38 @@ def menu_triagem(id_enfermeiro):
     consciente_input = input("Paciente está consciente? (s/n): ").strip().lower()
     consciente = consciente_input == "s"
 
-    lista_id_sintomas = []
-    id_comorbidades = []
+    id_fluxograma = None
+    lista_id_discriminadores_confirmados = []
 
     if consciente:
-        sintomas = listar_sintomas_disponiveis()
-        lista_id_sintomas = selecionar_ids(sintomas, "id_sintoma", "sintoma")
+        fluxogramas = listar_fluxogramas_disponiveis()
+        id_fluxograma = selecionar_id_unico(fluxogramas, "id_fluxograma", "fluxograma")
+        if id_fluxograma is None:
+            print("Triagem cancelada: é necessário escolher um fluxograma.")
+            return
 
-        comorbidades = listar_comorbidades_disponiveis()
-        id_comorbidades = selecionar_ids(comorbidades, "id_comorbidade", "comorbidade")
+        lista_id_discriminadores_confirmados = percorrer_discriminadores(id_fluxograma)
+
+    comorbidades = listar_comorbidades_disponiveis()
+    id_comorbidades = selecionar_ids(comorbidades, "id_comorbidade", "comorbidade")
 
     resultado = processar_triagem(
         paciente["id_paciente"],
         id_enfermeiro,
-        lista_id_sintomas,
+        id_fluxograma,
+        lista_id_discriminadores_confirmados,
         id_comorbidades,
         consciente,
     )
 
     if resultado:
         print("\n=== Resultado da triagem ===")
-        print(f"Classificação: {resultado['classificacao']}")
+        print(f"Classificação base (Manchester): {resultado['classificacao_base']}")
+        if resultado["agravado_por_comorbidade"]:
+            print(f"Agravado por comorbidade -> Classificação final: {resultado['classificacao']}")
+        else:
+            print(f"Classificação final: {resultado['classificacao']}")
         print(f"Prioridade: {resultado['prioridade']}")
-        print(f"Pontuação total: {resultado['pontuacao_total']}")
     else:
         print("Não foi possível processar a triagem.")
 
