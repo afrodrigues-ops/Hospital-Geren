@@ -1,4 +1,3 @@
-from paciente import buscar_paciente_por_cpf, cadastrar_paciente
 from paciente import Paciente
 
 class ListaEncadeada:
@@ -38,17 +37,20 @@ class ListaEncadeada:
 
         if self.lista_vazia():
             print("Lista está vazia, operação não permitida.")
-            return
+            return False
+
+        # Caso o paciente a remover seja o primeiro (cabeça) da lista
+        if atual.cpf == valor:
+            self.primeiro = atual.proximo
+            return True
+
+        # Procura o nó ANTERIOR ao que tem o cpf buscado
+        while atual.proximo is not None and atual.proximo.cpf != valor:
+            atual = atual.proximo
 
         if atual.proximo is None:
-            self.primeiro = None
-            return
-
-        while atual.proximo.nome != valor:
-            if atual.proximo.proximo is None:
-                print("Paciente não existe na lista")
-                return False
-            atual = atual.proximo
+            print("Paciente não existe na lista")
+            return False
 
         atual.proximo = atual.proximo.proximo
         return True
