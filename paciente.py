@@ -105,7 +105,7 @@ def buscar_comorbidades_do_paciente(id_paciente):
 
         cursor.execute(
             """
-            SELECT c.id_comorbidade, c.nome, c.pontuacao_extra
+            SELECT c.id_comorbidade, c.nome
             FROM comorbidades c
             INNER JOIN paciente_comorbidade pc ON c.id_comorbidade = pc.id_comorbidade
             WHERE pc.id_paciente = %s
@@ -118,7 +118,6 @@ def buscar_comorbidades_do_paciente(id_paciente):
             {
                 "id_comorbidade": r[0],
                 "nome":           r[1],
-                "pontuacao_extra": r[2],
             }
             for r in resultados
         ]
@@ -182,13 +181,12 @@ def listar_comorbidades_disponiveis():
 
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT id_comorbidade, nome, pontuacao_extra FROM comorbidades ORDER BY nome")
+        cursor.execute("SELECT id_comorbidade, nome FROM comorbidades ORDER BY nome")
         resultados = cursor.fetchall()
         return [
             {
                 "id_comorbidade": r[0],
                 "nome":           r[1],
-                "pontuacao_extra": r[2],
             }
             for r in resultados
         ]
